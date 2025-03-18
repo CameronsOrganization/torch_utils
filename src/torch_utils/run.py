@@ -51,14 +51,18 @@ class Runner:
 
                 train_loss = self.train_step(samples)
                 if self.logger is not None and step % log_steps == 0 and step > 0:
-                    self.logger.log_metric(
-                        "train_loss", train_loss, eu.compare_fns.min, step
+                    self.logger.log_value(
+                        "train_loss",
+                        train_loss,
+                        step=step,
+                        compare_fn=eu.compare_fns.min,
                     )
+
                 if step % val_steps == 0 and step > 0 and val_loader is not None:
                     val_loss = self.test(val_loader, "val", step)
                 if step >= steps:
                     break
-        if val_loader is not None and step % val_steps != val_steps - 1:
+        if val_loader is not None and step % val_steps != 0:
             val_loss = self.test(val_loader, "val", step)
 
         return val_loss
@@ -94,9 +98,14 @@ class Runner:
         avg_loss = total_loss / total_samples
         avg_accuracy = total_accuracy / total_samples
         if self.logger is not None:
-            self.logger.log_metric(f"{split}_loss", avg_loss, eu.compare_fns.min, step)
-            self.logger.log_metric(
-                f"{split}_accuracy", avg_accuracy, eu.compare_fns.max, step
+            self.logger.log_value(
+                f"{split}_loss", avg_loss, step=step, compare_fn=eu.compare_fns.min
+            )
+            self.logger.log_value(
+                f"{split}_accuracy",
+                avg_accuracy,
+                step=step,
+                compare_fn=eu.compare_fns.max,
             )
         return avg_loss
 

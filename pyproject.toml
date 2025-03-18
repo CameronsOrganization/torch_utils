@@ -6,4 +6,4 @@ build-backend = "setuptools.build_meta"
 name = "torch_utils"
 description = "A simple utility package for PyTorch"
 version = "0.0.1"
-dependencies = ["torch", "numpy"]
+dependencies = ["torch", "torchvision", "numpy", "tqdm"]

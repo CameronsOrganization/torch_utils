@@ -2,9 +2,130 @@ import torch
 import torch.nn as nn
 from tqdm.auto import tqdm, trange
 
-from typing import Optional
+from typing import Optional, Callable, Iterable
 
 import experiment_utils as eu
+
+
+def log_params(logger: Optional[eu.Logger] = None, **params):
+    if logger is None:
+        print("Params:")
+        print(params)
+    else:
+        logger.log_params(params)
+
+
+def log_values(
+    step: int,
+    logger: Optional[eu.Logger] = None,
+    compare_fn: Callable = eu.compare_fns.new,
+    **values,
+):
+    if logger is None:
+        print(f"Step: {step}")
+        print(values)
+    else:
+        logger.log_values(values, step, compare_fn)
+
+
+def test_step():
+    pass
+
+
+def test(
+    model: nn.Module,
+    test_loader: Iterable,
+    test_step: Callable = test_step,
+    run_name: Optional[str] = None,
+    logger: Optional[eu.Logger] = None,
+):
+    model.eval()
+    pass
+
+
+def train_step(
+    batch: dict,
+    model: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    lr_scheduler: torch.optim.lr_scheduler._LRScheduler,
+    metrics: dict,
+):
+    model.train()
+    optimizer.zero_grad()
+    output = model(batch)
+    loss = output["loss"]
+    loss.backward()
+    optimizer.step()
+    if lr_scheduler is not None:
+        lr_scheduler.step()
+
+    # Update metrics
+    metrics["total_steps"] += 1
+    for key in model.metric_keys:
+        metrics[key] += output[key].item()
+
+
+def train(
+    model: nn.Module,
+    train_loader: Iterable,
+    val_loader: Optional[Iterable] = None,
+    train_step: Callable = train_step,
+    val: Callable = test,
+    logger=None,
+    train_steps: int = 10000,
+    log_steps: int = 100,
+    val_steps: int = 1000,
+    optimizer=None,
+    lr_scheduler=None,
+    device=torch.device("cuda"),
+):
+    # Log params
+    log_params(
+        logger,
+        train_steps=train_steps,
+        log_steps=log_steps,
+        val_steps=val_steps,
+        lr=optimizer.param_group[0]["lr"],
+    )
+
+    step = 0
+    progress = trange(train_steps, leave=False)
+
+    # Initialize metrics
+    metrics = {**{"total_steps": 0}, **{key: 0 for key in model.metric_keys}}
+
+    model.to(device)
+    model.train()
+
+    while step < train_steps:
+        for batch in train_loader:
+            # Next step
+            step += 1
+            progress.update(1)
+            log_values(step, logger, lr=optimizer.param_group[0]["lr"])
+
+            # Train step
+            train_step()
+
+            # Validation
+            if val_loader is not None and step % val_steps == 0:
+                val()
+                model.train()
+            # Log
+            if step % log_steps == 0:
+                for key in model.metric_keys:
+                    value = metrics[key] / metrics["total_steps"]
+                    log_values(step, logger, **{key: value})
+                metrics = {
+                    **{"total_steps": 0},
+                    **{key: 0 for key in model.metric_keys},
+                }
+            # End of training
+            if train_steps <= step:
+                break
+    # Final validation
+    if val_loader is not None and step % val_steps != 0:
+        val()
 
 
 class Runner:

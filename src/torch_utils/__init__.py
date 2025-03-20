@@ -1,1 +1,1 @@
-from .run import Runner
+from .run import train, test

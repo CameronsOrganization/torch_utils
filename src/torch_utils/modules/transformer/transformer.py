@@ -8,7 +8,7 @@ from .attention import Attention
 from .mlp import MLP
 
 
-class Layer(nn.Module):
+class TransformerBlock(nn.Module):
     def __init__(
         self,
         hidden_dim: int,

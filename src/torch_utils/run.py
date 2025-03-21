@@ -43,6 +43,7 @@ def train_step(
 
     # Update metrics
     metrics["steps"] += 1
+    metrics["loss"] += loss.item()
     for key in model.metrics.keys():
         metrics[key] += output[key].item()
 
@@ -80,7 +81,7 @@ def train(
 
     # Initialize metrics
     metrics = {
-        **{"steps": 0},
+        **{"steps": 0, "loss": 0},
         **{key: 0 for key in model.metrics.keys()},
     }
     step = 0
@@ -109,6 +110,15 @@ def train(
                 model.train()
             # Log
             if step % log_steps == 0:
+                # Log loss
+                log_value(
+                    "train_loss",
+                    metrics["loss"] / metrics["steps"],
+                    step,
+                    logger,
+                    eu.compare_fns.min,
+                )
+                # Log model specific metrics
                 for key in model.metrics.keys():
                     value = metrics[key] / metrics["steps"]
                     log_value(
@@ -118,8 +128,9 @@ def train(
                         logger,
                         compare_fn=model.metrics[key],
                     )
+                # Reset metrics
                 metrics = {
-                    **{"steps": 0},
+                    **{"steps": 0, "loss": 0},
                     **{key: 0 for key in model.metrics.keys()},
                 }
             # End of training

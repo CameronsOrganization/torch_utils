@@ -67,7 +67,7 @@ def train(
         train_steps=train_steps,
         log_steps=log_steps,
         val_steps=val_steps,
-        lr=optimizer.param_groups[0]["lr"],
+        lr=optimizer.defaults["lr"],
     )
 
     # Accelerator

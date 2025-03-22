@@ -23,8 +23,8 @@ def _get_cosine_schedule_with_warmup_lr_lambda(
 
 def get_lr_scheduler(
     optimizer: torch.optim.Optimizer,
-    warmup_steps: int,
     train_steps: int,
+    warmup_steps: int = 0,
     scheduler_type: str = "cosine",
 ):
     if scheduler_type == "cosine":

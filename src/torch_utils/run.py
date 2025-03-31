@@ -31,7 +31,7 @@ def train_step(
     optimizer: torch.optim.Optimizer,
     metrics: dict,
     accelerator: Accelerator,
-    scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
+    scheduler: Optional[torch.optim.lr_scheduler.LRScheduler] = None,
 ):
     optimizer.zero_grad()
     output = model(batch)
